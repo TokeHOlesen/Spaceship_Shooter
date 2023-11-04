@@ -18,6 +18,13 @@ class GameRules:
         self.game_over_countdown = 60       # For how many frames to disable user imput after they die
         self.state = "Menu"                 # Describes the current state of the game loop
         self.game_over = False              # True when Game Over
+        self.joy_deadzone = 0.3
+        self.joystick_input = {             # Values change depending on joystick button press
+            "Left": False,
+            "Right": False,
+            "Up": False,
+            "Down": False
+        }
 
     # Resets all game values
     def reset_state(self):
@@ -38,6 +45,37 @@ class GameRules:
         explosion_group.empty()
         powerup_group.empty()
         heart_and_sparks_group.empty()
+
+    def get_joystick_input(self, event):
+        # Sets game.joystick_input direction values depending on current values of joystick axes 0 and 1
+        if event.type == pygame.JOYAXISMOTION:
+            if event.axis == 0 and event.value > self.joy_deadzone:
+                self.joystick_input["Right"] = True
+            elif event.axis == 0 and -self.joy_deadzone < event.value < self.joy_deadzone:
+                self.joystick_input["Right"] = False
+            if event.axis == 0 and event.value < -self.joy_deadzone:
+                self.joystick_input["Left"] = True
+            elif event.axis == 0 and self.joy_deadzone > event.value > -self.joy_deadzone:
+                self.joystick_input["Left"] = False
+            if event.axis == 1 and event.value > self.joy_deadzone:
+                self.joystick_input["Down"] = True
+            elif event.axis == 1 and -self.joy_deadzone < event.value < self.joy_deadzone:
+                self.joystick_input["Down"] = False
+            if event.axis == 1 and event.value < -self.joy_deadzone:
+                self.joystick_input["Up"] = True
+            elif event.axis == 1 and self.joy_deadzone > event.value > -self.joy_deadzone:
+                self.joystick_input["Up"] = False
+        # Reads d-pad
+        if event.type in [pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP]:
+            button_value = (event.type == pygame.JOYBUTTONDOWN)  # True if button down, False if button up
+            if event.button == 11:
+                self.joystick_input["Up"] = button_value
+            elif event.button == 12:
+                self.joystick_input["Down"] = button_value
+            elif event.button == 13:
+                self.joystick_input["Left"] = button_value
+            elif event.button == 14:
+                self.joystick_input["Right"] = button_value
 
     # Converts score to string and inserts leading zeros
     def get_score_string(self):

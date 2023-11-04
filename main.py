@@ -4,6 +4,10 @@ from enemyship import *
 from collisions import *
 from waves import *
 
+pygame.joystick.init()
+if pygame.joystick.get_count() > 0:
+    joystick = pygame.joystick.Joystick(0)
+
 # Spawns a ship for the player
 player_ship_group.add(PlayerShip())
 game.load_high_score()
@@ -71,26 +75,36 @@ while True:
             pygame.quit()
             exit()
 
+        game.get_joystick_input(event)
+
     if game.state == "Menu":
         for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
-                    menu_select_sound.play()
-                    if active_menu_item == 0:
-                        game.state = "Game"
-                    elif active_menu_item == 1:
-                        game.state = "Settings"
-                    elif active_menu_item == 2:
-                        game.state = "High Score"
-                    elif active_menu_item == 3:
-                        pygame.quit()
-                        exit()
-                if event.key == pygame.K_DOWN:
-                    active_menu_item = min(active_menu_item + 1, 3)
-                    menu_move_sound.play()
-                if event.key == pygame.K_UP:
-                    active_menu_item = max(active_menu_item - 1, 0)
-                    menu_move_sound.play()
+            if (event.type == pygame.KEYDOWN and event.key in [pygame.K_RETURN, pygame.K_SPACE]
+                    or event.type == pygame.JOYBUTTONDOWN and event.button in [0, 1, 2, 3, 6]):
+                menu_select_sound.play()
+                if active_menu_item == 0:
+                    game.state = "Game"
+                elif active_menu_item == 1:
+                    game.state = "Settings"
+                elif active_menu_item == 2:
+                    game.state = "High Score"
+                elif active_menu_item == 3:
+                    pygame.quit()
+                    exit()
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 12
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value > min(game.joy_deadzone + 0.6, 0.9)):
+                active_menu_item = min(active_menu_item + 1, 3)
+                menu_move_sound.play()
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_UP
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 11
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value < max(-game.joy_deadzone - 0.6, -0.9)):
+                active_menu_item = max(active_menu_item - 1, 0)
+                menu_move_sound.play()
+
+        bg_music.stop_playing()
 
         menu_surface.fill("#2C6286")
         menu_surface.blit(logo_image, (0, 70))
@@ -107,20 +121,30 @@ while True:
 
     elif game.state == "Settings":
         for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
-                    if not active_settings_item == 6:
-                        menu_move_sound.play()
-                    active_settings_item = min(active_settings_item + 1, 6)
-                if event.key == pygame.K_UP:
-                    if not active_settings_item == 0:
-                        menu_move_sound.play()
-                    active_settings_item = max(active_settings_item - 1, 0)
-                if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_ESCAPE]:
-                    if active_settings_item in range(6) and not event.key == pygame.K_ESCAPE:
-                        save_res_multiplier(active_settings_item + 1)
-                    menu_select_sound.play()
-                    game.state = "Menu"
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 12
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value > min(game.joy_deadzone + 0.6, 0.9)):
+                if not active_settings_item == 6:
+                    menu_move_sound.play()
+                active_settings_item = min(active_settings_item + 1, 6)
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_UP
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 11
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value < max(-game.joy_deadzone - 0.6, -0.9)):
+                if not active_settings_item == 0:
+                    menu_move_sound.play()
+                active_settings_item = max(active_settings_item - 1, 0)
+            if event.type == pygame.KEYDOWN and event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_ESCAPE]:
+                if active_settings_item in range(6) and not event.key == pygame.K_ESCAPE:
+                    save_res_multiplier(active_settings_item + 1)
+                menu_select_sound.play()
+                game.state = "Menu"
+            if event.type == pygame.JOYBUTTONDOWN and event.button in [0, 1, 2, 3, 4, 6]:
+                if active_settings_item in range(6) and not event.button == 4:
+                    save_res_multiplier(active_settings_item + 1)
+                menu_select_sound.play()
+                game.state = "Menu"
 
         menu_surface.fill("#2C6286")
         menu_surface.blit(logo_image, (0, 30))
@@ -140,7 +164,8 @@ while True:
 
     elif game.state == "High Score":
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key in [pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE]:
+            if (event.type == pygame.KEYDOWN and event.key in [pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE]
+                    or event.type == pygame.JOYBUTTONDOWN and event.button in [0, 1, 2, 3, 4, 6]):
                 menu_select_sound.play()
                 game.state = "Menu"
 
@@ -187,34 +212,40 @@ while True:
 
     elif game.state == "New High Score":
         for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    menu_move_sound.play()
-                    current_letter += 1
-                    if current_letter > len(name_letters) - 1:
-                        current_letter = 0
-                if event.key == pygame.K_DOWN:
-                    menu_move_sound.play()
-                    current_letter -= 1
-                    if current_letter < 0:
-                        current_letter = len(name_letters) - 1
-                if event.key == pygame.K_RETURN:
-                    menu_select_sound.play()
-                    highscore_name += name_letters[current_letter]
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_UP
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 11
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value < max(-game.joy_deadzone - 0.6, -0.9)):
+                menu_move_sound.play()
+                current_letter += 1
+                if current_letter > len(name_letters) - 1:
                     current_letter = 0
-                    if current_pos <= 1:
-                        current_pos += 1
-                    elif current_pos == 2:
-                        game.update_high_score(highscore_name, game.get_score_string())
-                        game.save_high_score()
-                        current_letter = 0
-                        current_pos = 0
-                        highscore_name = ""
-                        game.reset_state()
-                        player_ship_group.add(PlayerShip())
-                        menu_surf_y_pos = 0
-                        display_cloud = False
-                        game.state = "High Score"
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 12
+                    or event.type == pygame.JOYAXISMOTION and event.axis == 1
+                    and event.value > min(game.joy_deadzone + 0.6, 0.9)):
+                menu_move_sound.play()
+                current_letter -= 1
+                if current_letter < 0:
+                    current_letter = len(name_letters) - 1
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 6):
+                menu_select_sound.play()
+                highscore_name += name_letters[current_letter]
+                current_letter = 0
+                if current_pos <= 1:
+                    current_pos += 1
+                elif current_pos == 2:
+                    game.update_high_score(highscore_name, game.get_score_string())
+                    game.save_high_score()
+                    current_letter = 0
+                    current_pos = 0
+                    highscore_name = ""
+                    game.reset_state()
+                    player_ship_group.add(PlayerShip())
+                    menu_surf_y_pos = 0
+                    display_cloud = False
+                    game.state = "High Score"
 
         bg_music.stop_playing()
 
@@ -242,10 +273,18 @@ while True:
         if show_letter:
             menu_surface.blit(letter_to_draw, (letter_positions[current_pos], 220))
 
+        menu_surface.blit(enter_or_start_text, (x_center(enter_or_start_text), 260))
+        menu_surface.blit(to_confirm_text, (x_center(to_confirm_text), 280))
+
         blit_menu_onto_screen()
 
     elif game.state == "Pause":
         for event in events:
+            if event.type == pygame.JOYBUTTONDOWN:
+                if event.button == 6:
+                    game.state = "Game"
+                if event.button == 4:
+                    game.state = "Exit"
             if event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_p, pygame.K_PAUSE]:
                     game.state = "Game"
@@ -258,9 +297,11 @@ while True:
 
     elif game.state == "Exit":
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key in [pygame.K_ESCAPE, pygame.K_n]:
+            if (event.type == pygame.KEYDOWN and event.key in [pygame.K_ESCAPE, pygame.K_n]
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 1):
                 game.state = "Game"
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_y:
+            if (event.type == pygame.KEYDOWN and event.key == pygame.K_y
+                    or event.type == pygame.JOYBUTTONDOWN and event.button == 0):
                 bg_music.stop_playing()
                 game.reset_state()
                 player_ship_group.add(PlayerShip())
@@ -285,8 +326,18 @@ while True:
                         cloud_rect.bottom = -10
                         # Whenever a cloud is spawned, one of two types is randomly chosen
                         cloud_type = randint(0, 1)
+
+            # Processes joystick input
             if event.type == pygame.JOYBUTTONDOWN:
-                PlayerBullet.spawn_bullets(player_ship_group.sprite.rect, game.number_of_missiles)
+                if event.button in [0, 1, 2, 3] and game.enemy_countdown <= 110:
+                    if player_ship_group:
+                        PlayerBullet.spawn_bullets(player_ship_group.sprite.rect, game.number_of_missiles)
+                if event.button == 6 and not (game.enemy_countdown or game.game_over):
+                    game.state = "Pause"
+                if event.button == 4 and not game.game_over:
+                    game.state = "Exit"
+
+            # Processes keyboard input
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and game.enemy_countdown <= 110:
                     if player_ship_group:
@@ -295,6 +346,9 @@ while True:
                     game.state = "Pause"
                 if event.key == pygame.K_ESCAPE and not game.game_over:
                     game.state = "Exit"
+
+            # In Game Over screen, goes back to menu or to high score screen if a key or a button is pressed
+            if event.type in [pygame.KEYDOWN, pygame.JOYBUTTONDOWN]:
                 if game.game_over and not game.game_over_countdown:
                     if game.high_score_is_eligible(game.score):
                         game.state = "New High Score"
@@ -304,6 +358,8 @@ while True:
                         menu_surf_y_pos = 0
                         display_cloud = False
                         game.state = "Menu"
+
+            # Plays a new random track if the currently played one has ended
             if event.type == music_end:
                 bg_music.shuffle_and_play()
 
@@ -397,8 +453,12 @@ while True:
 
         if 180 < game.enemy_countdown <= 250:
             display.blit(ready_text, screen_center(ready_text))
+            if game.enemy_countdown == 250:
+                menu_move_sound.play()
         elif 110 < game.enemy_countdown <= 180:
             display.blit(set_text, screen_center(set_text))
+            if game.enemy_countdown == 180:
+                menu_move_sound.play()
         elif 40 < game.enemy_countdown <= 110:
             display.blit(go_text, screen_center(go_text))
 

@@ -24,7 +24,7 @@ class PlayerShip(pygame.sprite.Sprite):
     def move_player(self):
         if game.enemy_countdown <= 110:
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
+            if keys[pygame.K_LEFT] or game.joystick_input["Left"]:
                 self.rect.x -= self.movement_speed
                 if self.right_angle <= 0 and self.left_angle < self.second_turn_frame:
                     self.left_angle += 1
@@ -33,7 +33,7 @@ class PlayerShip(pygame.sprite.Sprite):
                     self.left_angle = self.first_turn_frame
                 elif self.left_angle > 0:
                     self.left_angle -= 1
-            if keys[pygame.K_RIGHT]:
+            if keys[pygame.K_RIGHT] or game.joystick_input["Right"]:
                 self.rect.x += self.movement_speed
                 if self.left_angle <= 0 and self.right_angle < self.second_turn_frame:
                     self.right_angle += 1
@@ -42,9 +42,9 @@ class PlayerShip(pygame.sprite.Sprite):
                     self.right_angle = self.first_turn_frame
                 elif self.right_angle > 0:
                     self.right_angle -= 1
-            if keys[pygame.K_UP]:
+            if keys[pygame.K_UP] or game.joystick_input["Up"]:
                 self.rect.y -= self.movement_speed
-            if keys[pygame.K_DOWN]:
+            if keys[pygame.K_DOWN] or game.joystick_input["Down"]:
                 self.rect.y += self.movement_speed
 
     # Keeps the ship within the boundaries of the game display

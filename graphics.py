@@ -108,7 +108,7 @@ pause_text = render_text("Pause")
 # Exit screen
 exit_bg = pygame.image.load("./Assets/Graphics/exit_bg.png").convert_alpha()
 really_exit_text = render_text("Quit to main menu?")
-yes_no_text = render_text("(Y/N)")
+yes_no_text = render_text("(Y/N) or (A/B)")
 
 # Game Over screen
 game_over_text = render_text("Game Over")
@@ -116,6 +116,8 @@ game_over_text = render_text("Game Over")
 # High Score screen
 got_high_score_text = render_text("You've got a high score!")
 your_name_text = render_text("Your name:")
+enter_or_start_text = render_text("Press Enter or Menu")
+to_confirm_text = render_text("To confirm selection")
 
 letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 name_letters = list(letters)
